@@ -14,18 +14,18 @@ const turnXYobject = (vertice) => {
 const MathOps = {
 	decrement: {
 		X: (vertice) => {
-			return vec2(vertice[0]-1.0, vertice[1]);
+			return vec2(vertice[0]-0.5, vertice[1]);
 		},
 		Y: (vertice) => {
-			return vec2(vertice[0], vertice[1]-1.0);
+			return vec2(vertice[0], vertice[1]-0.5);
 		},
 	},
-	increase: {
+	increment: {
 		X: (vertice) => {
-			return vec2(vertice[0]+1.0, vertice[1]);
+			return vec2(vertice[0]+0.5, vertice[1]);
 		},
 		Y: (vertice) => {
-			return vec2(vertice[0], vertice[1]+1.0);
+			return vec2(vertice[0], vertice[1]+0.5);
 		},
 	},
 };
@@ -57,45 +57,48 @@ const twist = (triangle, angle) => {
 }
 
 const init = () => {
-    const canvas = document.getElementById('gl-canvas');
+	const canvas = document.getElementById('gl-canvas');
 
-    gl = WebGLUtils.setupWebGL(canvas);
-    if (!gl) alert("Webgl isn't avaliable!");
+	gl = WebGLUtils.setupWebGL(canvas);
+	if (!gl) alert("Webgl isn't avaliable!");
 
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+	gl.viewport(0, 0, canvas.width, canvas.height);
+	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-    const program = initShaders(gl, 'vertex-shader', 'fragment-shader');
-    gl.useProgram(program);
+	const program = initShaders(gl, 'vertex-shader', 'fragment-shader');
+	gl.useProgram(program);
 
-		// Vertices
-		let vertices = []
+	// Vertices
+	let vertices = []
 
-		// Example equilateral triangle
-		let triangle = [
-			vec2( -1/3, -1/3+0.7),
-			vec2(  1/3, -1/3+0.7),
-			vec2(  0/3, (SQRT_3-1)/3+0.7),
-		]
-		console.log(triangle)
-		
-		let twisted_triangle = twist(triangle, ANGLE);
-		twisted_triangle = twisted_triangle.map(MathOps.decrement.Y)
-		console.log(twisted_triangle)
+	// Example equilateral triangle
+	let triangle = [
+		vec2( -1/3, -1/3+0.7),
+		vec2(  1/3, -1/3+0.7),
+		vec2(  0/3, (SQRT_3-1)/3+0.7),
+	]
+	console.log(triangle)
+	triangle = triangle.map(MathOps.decrement.X);
 
-		vertices = vertices.concat(triangle, twisted_triangle)
-		console.log(vertices)
+	let twisted_triangle = twist(triangle, ANGLE);
+	twisted_triangle = twisted_triangle.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
+	console.log(twisted_triangle)
 
-    // Load the data into the GPU
-    const bufferId = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+	let tesselation = triangle.map(MathOps.increment.X).map(MathOps.increment.X)
+	let twisted_tesselation = tesselation.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
+	vertices = vertices.concat(triangle, tesselation, twisted_triangle, twisted_tesselation)
+	console.log(vertices)
 
-    // Associate out shader variables with our data buffer
-    const vPos = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPos);
-		render(vertices.length);
+	// Load the data into the GPU
+	const bufferId = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+	gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
+
+	// Associate out shader variables with our data buffer
+	const vPos = gl.getAttribLocation(program, "vPosition");
+	gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(vPos);
+	render(vertices.length);
 }
 
 const render = (size) => {
