@@ -39,13 +39,13 @@ const findCenterOfGravity = (triangle) => {
 const twistWithoutTesselation = (triangle, centerVertice, angle) => {
 	let twistedTriangle = []
 	let center = turnXYobject(centerVertice);
+	let cosAngle = Math.cos(angle * RAD);
+	let sinAngle = Math.sin(angle * RAD);
 
 	for(let vertice of triangle) {
 		let vertice_object = turnXYobject(vertice);
 		let distanceX = vertice_object.X - center.X;
 		let distanceY = vertice_object.Y - center.Y;
-		let cosAngle = Math.cos(angle * RAD);
-		let sinAngle = Math.sin(angle * RAD);
 		let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
 		let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
 		let newVertice = vec2(newX, newY)
@@ -64,8 +64,8 @@ const twistWithTesselation = (triangle, centerVertice, angle) => {
 		let distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
 		let distanceX = vertice_object.X - center.X;
 		let distanceY = vertice_object.Y - center.Y;
-		let cosAngle = Math.cos(angle * RAD * distance);
-		let sinAngle = Math.sin(angle * RAD * distance);
+		let cosAngle = Math.cos(newAngle * distance);
+		let sinAngle = Math.sin(newAngle * distance);
 		let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
 		let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
 		let newVertice = vec2(newX, newY)
@@ -137,12 +137,6 @@ const init = () => {
 	console.log(triangle)
 	triangle = triangle.map(MathOps.decrement.X);
 
-	/*
-	let dividedTriangle = divideTriangleAndReturnMiniTriangle(triangle);
-	console.log("Divided Triangle")
-	console.log(...dividedTriangle);
-	*/
-
 	let centerVerticeForSingle = findCenterOfGravity(triangle)
 	let twisted_triangle = twistWithoutTesselation(triangle, centerVerticeForSingle, ANGLE);
 	twisted_triangle = twisted_triangle.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
@@ -152,14 +146,29 @@ const init = () => {
 	let triangleForTesselation = triangle.map(MathOps.increment.X).map(MathOps.increment.X)
 	let centerVerticeForTesselation = findCenterOfGravity(triangleForTesselation)
 	let tesselation =  getTessalation(triangleForTesselation, false, centerVerticeForTesselation, ANGLE);
-	console.log("Mini Triangle, Tesselation: ")
-	console.log(...tesselation)
+	let AllTesselation = []
+
+	for(let tess of tesselation) {
+		let _tempTesselation = getTessalation(tess, false, centerVerticeForTesselation, ANGLE);
+		AllTesselation.push(..._tempTesselation)
+	}
+	console.log("Tesselation: ")
+	console.log(...AllTesselation)
+
 	let triangleForTwistedTesselation = tesselation.map(MathOps.decrement.Y).map(MathOps.decrement.Y).map(MathOps.decrement.Y)
 	let centerVerticeForTwistedTesselation = findCenterOfGravity(triangleForTwistedTesselation)
 	let twisted_tesselation = getTessalation(triangleForTwistedTesselation, true, centerVerticeForTwistedTesselation, ANGLE)
-	console.log("Mini Triangle, Tesselation with Twist: ")
-	console.log(...twisted_tesselation)
-	vertices = vertices.concat(triangle, ...tesselation, twisted_triangle, ...twisted_tesselation)
+	let All_twisted_tesselation = []
+
+	for(let tess of twisted_tesselation) {
+		let _tempTesselation = getTessalation(tess, true, centerVerticeForTwistedTesselation, ANGLE)
+		All_twisted_tesselation.push(..._tempTesselation)
+	}
+
+	console.log("Tesselation with Twist:")
+	console.log(...All_twisted_tesselation)
+
+	vertices = vertices.concat(triangle, ...AllTesselation, twisted_triangle, ...All_twisted_tesselation)
 	console.log(vertices)
 
 	// Load the data into the GPU
