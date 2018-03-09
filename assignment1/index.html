@@ -20,7 +20,7 @@
 
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
-        void main() { 
+        void main() {
             gl_FragColor = vec4( 0.0, 2.0, 0.0, 1.0 );
         }
     </script>
@@ -31,6 +31,10 @@
 </head>
 
 <body>
-    <canvas id="gl-canvas" width="500" height="500"></canvas>
+    <canvas id="gl-canvas-single-triangle" width="300" height="300"></canvas>
+    <canvas id="gl-canvas-tesselation" width="300" height="300"></canvas>
+    <br>
+    <canvas id="gl-canvas-twist-single-triangle" width="300" height="300"></canvas>
+    <canvas id="gl-canvas-twist-tesselation" width="300" height="300"></canvas>
 </body>
 </html>
