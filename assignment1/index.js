@@ -103,7 +103,7 @@ const Util = {
 }
 const Canvas = (canvasId, vertices, isFill) => {
 	console.log("[|] Canvas:")
-    const canvas = document.getElementById(canvasId);
+	const canvas = document.getElementById(canvasId);
 
 	let gl = WebGLUtils.setupWebGL(canvas);
 	if (!gl) alert("Webgl isn't avaliable!");
@@ -132,20 +132,20 @@ const Canvas = (canvasId, vertices, isFill) => {
 
 const render = (gl, isFill, size) => {
 	console.log("[-] render:")
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    if (isFill == false) {
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	if (isFill == false) {
 		for(let i=0; i < size; i+=3)
-        	gl.drawArrays(gl.LINE_LOOP, i, 3)
-    } else {
+			gl.drawArrays(gl.LINE_LOOP, i, 3)
+	} else {
 		for(let i=0; i < size; i+=3)
-        	gl.drawArrays(gl.TRIANGLE_FAN, i, 3)
-    }
+			gl.drawArrays(gl.TRIANGLE_FAN, i, 3)
+	}
 }
 
 const SingleTriangle = (triangle) => {
 	console.log("[/] SingleTriangle:")
 	console.log(triangle)
-    Canvas('gl-canvas-single-triangle', triangle, false);
+	Canvas('gl-canvas-single-triangle', triangle, false);
 }
 
 const SingleTwistedTriangle = (triangle, angle) => {
@@ -184,13 +184,13 @@ const TwistedTesselation = (triangle, angle) => {
 
 const init = () => {
 	console.log("[-] init:")
-    // Example equilateral triangle
+	// Example equilateral triangle
 	let triangle = [
 		vec2( -0.5, -0.5),
 		vec2( -0.5,  0.5),
 		vec2(  0.5,  0.5),
-    ]
-    SingleTriangle(triangle)
+	]
+	SingleTriangle(triangle)
 	SingleTwistedTriangle(triangle, 120)
 	Tesselation(triangle)
 	TwistedTesselation(triangle, 120)
