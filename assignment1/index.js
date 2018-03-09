@@ -1,121 +1,111 @@
 "use strict"
-let gl;
-const ANGLE = 190;
+// Global Variables
 const SQRT_3 = Math.sqrt(3);
 const RAD = Math.PI / 180;
 
-const turnXYobject = (vertice) => {
-	return {
-		'X': vertice[0],
-		'Y': vertice[1],
-	};
-}
-
-const MathOps = {
-	decrement: {
-		X: (vertice) => {
-			return vec2(vertice[0]-0.5, vertice[1]);
-		},
-		Y: (vertice) => {
-			return vec2(vertice[0], vertice[1]-0.5);
-		},
+// Functions
+const Util = {
+	TurnXYobject: (vertice) => {
+		return {
+			'X': vertice[0],
+			'Y': vertice[1],
+		};
 	},
-	increment: {
-		X: (vertice) => {
-			return vec2(vertice[0]+0.5, vertice[1]);
-		},
-		Y: (vertice) => {
-			return vec2(vertice[0], vertice[1]+0.5);
-		},
+	FindCenterOfGravityAndReturnVertice: (triangle) => {
+		console.log('[+] Util.FindCenterOfGravityAndReturnVertice:')
+		let xg = (triangle[0][0] + triangle[1][0] + triangle[2][0]) / 3
+		let yg = (triangle[0][1] + triangle[1][1] + triangle[2][1]) / 3
+		return vec2(xg, yg);
 	},
-};
+	CreateTriangle: (vertice1, vertice2, vertice3) => {
+		console.log('[+] Util.CreateTriangle:')
+		return [vertice1, vertice2, vertice3];
+	},
+	GetMiddleVertice: (first, second) => {
+		console.log('[+] Util.GetMiddleVertice:')
+		return vec2((first[0] + second[0])/2, (first[1] + second[1])/2)
+	},
+	DivideTriangleAndReturn4MiniTriangle: (triangle) => {
+		console.log('[+] Util.DivideTriangleAndReturn4MiniTriangle:')
+		let [a, b, c] = triangle
+		let ab = Util.GetMiddleVertice(a, b);
+		let ac = Util.GetMiddleVertice(a, c);
+		let bc = Util.GetMiddleVertice(b, c);
+		return [
+			Util.CreateTriangle(a, ab, ac),
+			Util.CreateTriangle(b, ab, bc),
+			Util.CreateTriangle(c, ac, bc),
+			Util.CreateTriangle(ab, bc, ac),
+		];
+	},
+	TwistWithTesselation: (triangle, centerVertice, angle) => {
+		console.log('[+] Util.TwistWithTesselation:')
+		let twisted_triangle = []
+		let center = Util.TurnXYobject(centerVertice)
+		let new_angle = angle * RAD
+		console.log(triangle)
+		for(let vertice of triangle) {
+			let vertice_object = Util.TurnXYobject(vertice);
+			let distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
+			let distanceX = vertice_object.X - center.X;
+			let distanceY = vertice_object.Y - center.Y;
+			let cosAngle = Math.cos(new_angle * distance);
+			let sinAngle = Math.sin(new_angle * distance);
+			let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
+			let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+			let newVertice = vec2(newX, newY)
+			twisted_triangle.push(newVertice)
+		}
+		return twisted_triangle
+	},
+	TwistWithoutTesselation: (triangle, center_vertice, angle) => {
+		console.log('[+] Util.TwistWithoutTesselation:')
+		let twisted_triangle = []
+		let center = Util.TurnXYobject(center_vertice);
+		let cosAngle = Math.cos(angle * RAD);
+		let sinAngle = Math.sin(angle * RAD);
+		console.log(triangle)
+		for(let vertice of triangle) {
+			let vertice_object = Util.TurnXYobject(vertice);
+			let distanceX = vertice_object.X - center.X;
+			let distanceY = vertice_object.Y - center.Y;
+			let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
+			let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+			let newVertice = vec2(newX, newY)
+			twisted_triangle.push(newVertice)
+		}
+		return twisted_triangle;
+	},
+	GetTessalation: (all, triangle, count) => {
+		console.log('[+] Util.GetTessalation:')
+		if (count == 0) {
+			all.push(triangle)
+		} else {
+			count--
+			let [triangle1, triangle2, triangle3, triangle4] = Util.DivideTriangleAndReturn4MiniTriangle(triangle)
+			Util.GetTessalation(all, triangle1, count)
+			Util.GetTessalation(all, triangle2, count)
+			Util.GetTessalation(all, triangle3, count)
+			Util.GetTessalation(all, triangle4, count)
+		}
+	},
 
-const findCenterOfGravity = (triangle) => {
-	let xg = (triangle[0][0] + triangle[1][0] + triangle[2][0]) / 3
-	let yg = (triangle[0][1] + triangle[1][1] + triangle[2][1]) / 3
-	return vec2(xg, yg);
+	// Convert triangle array to vertice array
+	ConvertTriangleArr2NormalArr: (triangles) => {
+		console.log('[+] Util.ConvertTriangleArr2NormalArr:')
+		let clean_triangles = triangles.reduce((clean, triangle) => {
+			clean.push(triangle[0], triangle[1], triangle[2])
+			return clean
+		}, [])
+		return clean_triangles
+	},
+
 }
+const Canvas = (canvasId, vertices, isFill) => {
+	console.log("[|] Canvas:")
+    const canvas = document.getElementById(canvasId);
 
-const twistWithoutTesselation = (triangle, centerVertice, angle) => {
-	let twistedTriangle = []
-	let center = turnXYobject(centerVertice);
-	let cosAngle = Math.cos(angle * RAD);
-	let sinAngle = Math.sin(angle * RAD);
-
-	for(let vertice of triangle) {
-		let vertice_object = turnXYobject(vertice);
-		let distanceX = vertice_object.X - center.X;
-		let distanceY = vertice_object.Y - center.Y;
-		let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
-		let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
-		let newVertice = vec2(newX, newY)
-		twistedTriangle.push(newVertice)
-	}
-	return twistedTriangle;
-}
-
-const twistWithTesselation = (triangle, centerVertice, angle) => {
-	let twistedTriangle = []
-	let center = turnXYobject(centerVertice)
-	let newAngle = angle * RAD
-
-	for(let vertice of triangle) {
-		let vertice_object = turnXYobject(vertice);
-		let distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
-		let distanceX = vertice_object.X - center.X;
-		let distanceY = vertice_object.Y - center.Y;
-		let cosAngle = Math.cos(newAngle * distance);
-		let sinAngle = Math.sin(newAngle * distance);
-		let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
-		let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
-		let newVertice = vec2(newX, newY)
-		twistedTriangle.push(newVertice)
-	}
-	return twistedTriangle
-}
-
-const createTriangle = (vertice1, vertice2, vertice3) => {
-	return [vertice1, vertice2, vertice3];
-}
-
-const getMiddleVertice = (first, second) => {
-	return vec2((first[0] + second[0])/2, (first[1] + second[1])/2)
-}
-
-const divideTriangleAndReturnMiniTriangle = (triangle) => {
-	let a = triangle[0]
-	let b = triangle[1]
-	let c = triangle[2]
-	let ab = getMiddleVertice(a, b);
-	let ac = getMiddleVertice(a, c);
-	let bc = getMiddleVertice(b, c);
-	return [
-		createTriangle(a, ab, ac),
-		createTriangle(b, ab, bc),
-		createTriangle(c, ac, bc),
-		createTriangle(ab, bc, ac),
-	];
-}
-
-const getTessalation = (triangle, isTwist, centerVertice, angle) => {
-	console.log(`isTwist = ${isTwist}`)
-	let triangles = divideTriangleAndReturnMiniTriangle(triangle)
-	if (isTwist == false) {
-		return triangles;
-	}
-	let twistedtriangles = []
-	for(let _triangle of triangles) {
-		let twistedtriangle = twistWithTesselation(_triangle, centerVertice, angle);
-		twistedtriangles.push(twistedtriangle);
-	}
-
-	return twistedtriangles;
-}
-
-const init = () => {
-	const canvas = document.getElementById('gl-canvas');
-
-	gl = WebGLUtils.setupWebGL(canvas);
+	let gl = WebGLUtils.setupWebGL(canvas);
 	if (!gl) alert("Webgl isn't avaliable!");
 
 	gl.viewport(0, 0, canvas.width, canvas.height);
@@ -124,51 +114,8 @@ const init = () => {
 	const program = initShaders(gl, 'vertex-shader', 'fragment-shader');
 	gl.useProgram(program);
 
-	// Vertices
-	let vertices = []
-
-	// Example equilateral triangle
-	let triangle = [
-		vec2( -1/3, -1/3+0.7),
-		vec2(  1/3, -1/3+0.7),
-		vec2(  0/3, (SQRT_3-1)/3+0.7),
-	]
-	console.log("Single Triangle: ")
-	console.log(triangle)
-	triangle = triangle.map(MathOps.decrement.X);
-
-	let centerVerticeForSingle = findCenterOfGravity(triangle)
-	let twisted_triangle = twistWithoutTesselation(triangle, centerVerticeForSingle, ANGLE);
-	twisted_triangle = twisted_triangle.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
-	console.log("Single Twisted Triangle: ")
-	console.log(twisted_triangle)
-
-	let triangleForTesselation = triangle.map(MathOps.increment.X).map(MathOps.increment.X)
-	let centerVerticeForTesselation = findCenterOfGravity(triangleForTesselation)
-	let tesselation =  getTessalation(triangleForTesselation, false, centerVerticeForTesselation, ANGLE);
-	let AllTesselation = []
-
-	for(let tess of tesselation) {
-		let _tempTesselation = getTessalation(tess, false, centerVerticeForTesselation, ANGLE);
-		AllTesselation.push(..._tempTesselation)
-	}
-	console.log("Tesselation: ")
-	console.log(...AllTesselation)
-
-	let triangleForTwistedTesselation = tesselation.map(MathOps.decrement.Y).map(MathOps.decrement.Y).map(MathOps.decrement.Y)
-	let centerVerticeForTwistedTesselation = findCenterOfGravity(triangleForTwistedTesselation)
-	let twisted_tesselation = getTessalation(triangleForTwistedTesselation, true, centerVerticeForTwistedTesselation, ANGLE)
-	let All_twisted_tesselation = []
-
-	for(let tess of twisted_tesselation) {
-		let _tempTesselation = getTessalation(tess, true, centerVerticeForTwistedTesselation, ANGLE)
-		All_twisted_tesselation.push(..._tempTesselation)
-	}
-
-	console.log("Tesselation with Twist:")
-	console.log(...All_twisted_tesselation)
-
-	vertices = vertices.concat(triangle, ...AllTesselation, twisted_triangle, ...All_twisted_tesselation)
+	// Displaying Vertices
+	console.log("Vertices:")
 	console.log(vertices)
 
 	// Load the data into the GPU
@@ -180,20 +127,73 @@ const init = () => {
 	const vPos = gl.getAttribLocation(program, "vPosition");
 	gl.vertexAttribPointer(vPos, 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(vPos);
-	render(vertices.length);
+	render(gl, isFill, vertices.length);
 }
 
-const render = (size) => {
-	gl.clear(gl.COLOR_BUFFER_BIT);
-	console.log(size);
-	for (let i = 0; i < size / 2; i += 3) {
-		gl.drawArrays(gl.LINE_LOOP, i, 3);
+const render = (gl, isFill, size) => {
+	console.log("[-] render:")
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (isFill == false) {
+		for(let i=0; i < size; i+=3)
+        	gl.drawArrays(gl.LINE_LOOP, i, 3)
+    } else {
+		for(let i=0; i < size; i+=3)
+        	gl.drawArrays(gl.TRIANGLE_FAN, i, 3)
+    }
+}
+
+const SingleTriangle = (triangle) => {
+	console.log("[/] SingleTriangle:")
+	console.log(triangle)
+    Canvas('gl-canvas-single-triangle', triangle, false);
+}
+
+const SingleTwistedTriangle = (triangle, angle) => {
+	console.log("[/] SingleTwistedTriangle:")
+	let center_vertice = Util.FindCenterOfGravityAndReturnVertice(triangle)
+	console.log(`Center Vertice: ${center_vertice}`)
+	let twisted_triangle = Util.TwistWithoutTesselation(triangle, center_vertice, angle);
+	console.log(twisted_triangle)
+	Canvas('gl-canvas-twist-single-triangle', twisted_triangle, true);
+}
+
+const Tesselation = (triangle) => {
+	console.log("[/] Tesselation:")
+	let triangles = []
+	Util.GetTessalation(triangles, triangle, 2)
+	let vertices = Util.ConvertTriangleArr2NormalArr(triangles)
+	Canvas('gl-canvas-tesselation', vertices, false);
+}
+
+const TwistedTesselation = (triangle, angle) => {
+	console.log("[/] TwistedTesselation:")
+	let triangles = []
+	let twisted_triangles = []
+	let center_vertice = Util.FindCenterOfGravityAndReturnVertice(triangle)
+	Util.GetTessalation(triangles, triangle, 2)
+	for(let _triangle of triangles) {
+		console.log(_triangle)
+		let twisted_triangle = Util.TwistWithTesselation(_triangle, center_vertice, angle)
+		console.log(twisted_triangle)
+		twisted_triangles.push(twisted_triangle)
 	}
-	for (let i = size / 2; i < size; i += 3) {
-		gl.drawArrays(gl.TRIANGLE_FAN, i, 3);
-	}
-	//gl.drawArrays(gl.LINE_LOOP, 0, 3);
-	//gl.drawArrays(gl.TRIANGLE_FAN, 3, 3);
+	console.log(twisted_triangles)
+	let vertices = Util.ConvertTriangleArr2NormalArr(twisted_triangles)
+	Canvas('gl-canvas-twist-tesselation', vertices, true);
+}
+
+const init = () => {
+	console.log("[-] init:")
+    // Example equilateral triangle
+	let triangle = [
+		vec2( -0.5, -0.5),
+		vec2( -0.5,  0.5),
+		vec2(  0.5,  0.5),
+    ]
+    SingleTriangle(triangle)
+	SingleTwistedTriangle(triangle, 120)
+	Tesselation(triangle)
+	TwistedTesselation(triangle, 120)
 }
 
 window.onload = init;
