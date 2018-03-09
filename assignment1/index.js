@@ -36,11 +36,9 @@ const findCenterOfGravity = (triangle) => {
 	return vec2(xg, yg);
 }
 
-const twist = (triangle, angle) => {
+const twistWithoutTesselation = (triangle, centerVertice, angle) => {
 	let twistedTriangle = []
-	let centerVertice = findCenterOfGravity(triangle)
 	let center = turnXYobject(centerVertice);
-	console.log(center)
 
 	for(let vertice of triangle) {
 		let vertice_object = turnXYobject(vertice);
@@ -54,6 +52,64 @@ const twist = (triangle, angle) => {
 		twistedTriangle.push(newVertice)
 	}
 	return twistedTriangle;
+}
+
+const twistWithTesselation = (triangle, centerVertice, angle) => {
+	let twistedTriangle = []
+	let center = turnXYobject(centerVertice)
+	let newAngle = angle * RAD
+
+	for(let vertice of triangle) {
+		let vertice_object = turnXYobject(vertice);
+		let distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
+		let distanceX = vertice_object.X - center.X;
+		let distanceY = vertice_object.Y - center.Y;
+		let cosAngle = Math.cos(angle * RAD * distance);
+		let sinAngle = Math.sin(angle * RAD * distance);
+		let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
+		let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+		let newVertice = vec2(newX, newY)
+		twistedTriangle.push(newVertice)
+	}
+	return twistedTriangle
+}
+
+const createTriangle = (vertice1, vertice2, vertice3) => {
+	return [vertice1, vertice2, vertice3];
+}
+
+const getMiddleVertice = (first, second) => {
+	return vec2((first[0] + second[0])/2, (first[1] + second[1])/2)
+}
+
+const divideTriangleAndReturnMiniTriangle = (triangle) => {
+	let a = triangle[0]
+	let b = triangle[1]
+	let c = triangle[2]
+	let ab = getMiddleVertice(a, b);
+	let ac = getMiddleVertice(a, c);
+	let bc = getMiddleVertice(b, c);
+	return [
+		createTriangle(a, ab, ac),
+		createTriangle(b, ab, bc),
+		createTriangle(c, ac, bc),
+		createTriangle(ab, bc, ac),
+	];
+}
+
+const getTessalation = (triangle, isTwist, centerVertice, angle) => {
+	console.log(`isTwist = ${isTwist}`)
+	let triangles = divideTriangleAndReturnMiniTriangle(triangle)
+	if (isTwist == false) {
+		return triangles;
+	}
+	let twistedtriangles = []
+	for(let _triangle of triangles) {
+		let twistedtriangle = twistWithTesselation(_triangle, centerVertice, angle);
+		twistedtriangles.push(twistedtriangle);
+	}
+
+	return twistedtriangles;
 }
 
 const init = () => {
@@ -77,16 +133,33 @@ const init = () => {
 		vec2(  1/3, -1/3+0.7),
 		vec2(  0/3, (SQRT_3-1)/3+0.7),
 	]
+	console.log("Single Triangle: ")
 	console.log(triangle)
 	triangle = triangle.map(MathOps.decrement.X);
 
-	let twisted_triangle = twist(triangle, ANGLE);
+	/*
+	let dividedTriangle = divideTriangleAndReturnMiniTriangle(triangle);
+	console.log("Divided Triangle")
+	console.log(...dividedTriangle);
+	*/
+
+	let centerVerticeForSingle = findCenterOfGravity(triangle)
+	let twisted_triangle = twistWithoutTesselation(triangle, centerVerticeForSingle, ANGLE);
 	twisted_triangle = twisted_triangle.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
+	console.log("Single Twisted Triangle: ")
 	console.log(twisted_triangle)
 
-	let tesselation = triangle.map(MathOps.increment.X).map(MathOps.increment.X)
-	let twisted_tesselation = tesselation.map(MathOps.decrement.Y).map(MathOps.decrement.Y)
-	vertices = vertices.concat(triangle, tesselation, twisted_triangle, twisted_tesselation)
+	let triangleForTesselation = triangle.map(MathOps.increment.X).map(MathOps.increment.X)
+	let centerVerticeForTesselation = findCenterOfGravity(triangleForTesselation)
+	let tesselation =  getTessalation(triangleForTesselation, false, centerVerticeForTesselation, ANGLE);
+	console.log("Mini Triangle, Tesselation: ")
+	console.log(...tesselation)
+	let triangleForTwistedTesselation = tesselation.map(MathOps.decrement.Y).map(MathOps.decrement.Y).map(MathOps.decrement.Y)
+	let centerVerticeForTwistedTesselation = findCenterOfGravity(triangleForTwistedTesselation)
+	let twisted_tesselation = getTessalation(triangleForTwistedTesselation, true, centerVerticeForTwistedTesselation, ANGLE)
+	console.log("Mini Triangle, Tesselation with Twist: ")
+	console.log(...twisted_tesselation)
+	vertices = vertices.concat(triangle, ...tesselation, twisted_triangle, ...twisted_tesselation)
 	console.log(vertices)
 
 	// Load the data into the GPU
