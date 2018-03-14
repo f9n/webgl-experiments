@@ -43,17 +43,22 @@ const Util = {
 		let twisted_triangle = []
 		let center = Util.TurnXYobject(centerVertice)
 		let new_angle = angle * RAD
+		let vertice_object;
+		let distance, distanceX, distanceY;
+		let cosAngle, sinAngle;
+		let newX, newY;
+		let newVertice;
 		console.log(triangle)
 		for(let vertice of triangle) {
-			let vertice_object = Util.TurnXYobject(vertice);
-			let distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
-			let distanceX = vertice_object.X - center.X;
-			let distanceY = vertice_object.Y - center.Y;
-			let cosAngle = Math.cos(new_angle * distance);
-			let sinAngle = Math.sin(new_angle * distance);
-			let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
-			let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
-			let newVertice = vec2(newX, newY)
+			vertice_object = Util.TurnXYobject(vertice);
+			distance = Math.sqrt(Math.pow(vertice_object.X - center.X, 2) + Math.pow(vertice_object.Y - center.Y, 2))
+			distanceX = vertice_object.X - center.X;
+			distanceY = vertice_object.Y - center.Y;
+			cosAngle = Math.cos(new_angle * distance);
+			sinAngle = Math.sin(new_angle * distance);
+			newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
+			newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+			newVertice = vec2(newX, newY)
 			twisted_triangle.push(newVertice)
 		}
 		return twisted_triangle
@@ -64,14 +69,18 @@ const Util = {
 		let center = Util.TurnXYobject(center_vertice);
 		let cosAngle = Math.cos(angle * RAD);
 		let sinAngle = Math.sin(angle * RAD);
+		let vertice_object;
+		let distanceX, distanceY;
+		let newX, newY;
+		let newVertice;
 		console.log(triangle)
 		for(let vertice of triangle) {
-			let vertice_object = Util.TurnXYobject(vertice);
-			let distanceX = vertice_object.X - center.X;
-			let distanceY = vertice_object.Y - center.Y;
-			let newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
-			let newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
-			let newVertice = vec2(newX, newY)
+			vertice_object = Util.TurnXYobject(vertice);
+			distanceX = vertice_object.X - center.X;
+			distanceY = vertice_object.Y - center.Y;
+			newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
+			newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+			newVertice = vec2(newX, newY)
 			twisted_triangle.push(newVertice)
 		}
 		return twisted_triangle;
@@ -170,10 +179,11 @@ const TwistedTesselation = (triangle, angle) => {
 	let triangles = []
 	let twisted_triangles = []
 	let center_vertice = Util.FindCenterOfGravityAndReturnVertice(triangle)
+	let twisted_triangle;
 	Util.GetTessalation(triangles, triangle, 2)
 	for(let _triangle of triangles) {
 		console.log(_triangle)
-		let twisted_triangle = Util.TwistWithTesselation(_triangle, center_vertice, angle)
+		twisted_triangle = Util.TwistWithTesselation(_triangle, center_vertice, angle)
 		console.log(twisted_triangle)
 		twisted_triangles.push(twisted_triangle)
 	}
