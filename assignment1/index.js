@@ -78,8 +78,8 @@ const Util = {
 			vertice_object = Util.TurnXYobject(vertice);
 			distanceX = vertice_object.X - center.X;
 			distanceY = vertice_object.Y - center.Y;
-			newX = center.X + ( cosAngle * distanceX + sinAngle * distanceY)
-			newY = center.Y + (-sinAngle * distanceX + cosAngle * distanceY)
+			newX = center.X + ( cosAngle * distanceX - sinAngle * distanceY)
+			newY = center.Y + ( sinAngle * distanceX + cosAngle * distanceY)
 			newVertice = vec2(newX, newY)
 			twisted_triangle.push(newVertice)
 		}
@@ -196,9 +196,9 @@ const init = () => {
 	console.log("[-] init:")
 	// Example equilateral triangle
 	let triangle = [
-		vec2( -0.5, -0.5),
-		vec2( -0.5,  0.5),
-		vec2(  0.5,  0.5),
+		vec2( -0.85, 0.29792740578363097),
+		vec2( -0.5, 0.9041451884327381 ),
+		vec2( -0.15000000000000002, 0.29792740578363097),
 	]
 	SingleTriangle(triangle)
 	SingleTwistedTriangle(triangle, 120)
