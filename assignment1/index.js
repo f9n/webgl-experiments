@@ -17,6 +17,15 @@ const Util = {
 		let yg = (triangle[0][1] + triangle[1][1] + triangle[2][1]) / 3
 		return vec2(xg, yg);
 	},
+	getMainTriagle: (center, size) => {
+		let center_object = Util.TurnXYobject(center);
+		let height = SQRT_3 * size;
+		return [
+			vec2(center_object.X - size, center_object.Y - (height / 3.0)      ),//left
+			vec2(center_object.X       , center_object.Y + (height * 2.0 / 3.0)),//top
+			vec2(center_object.X + size, center_object.Y - (height / 3.0)      ),//right
+		];
+	},
 	CreateTriangle: (vertice1, vertice2, vertice3) => {
 		console.log('[+] Util.CreateTriangle:')
 		return [vertice1, vertice2, vertice3];
@@ -195,11 +204,14 @@ const TwistedTesselation = (triangle, angle) => {
 const init = () => {
 	console.log("[-] init:")
 	// Example equilateral triangle
+	/*
 	let triangle = [
 		vec2( -0.85, 0.29792740578363097),
 		vec2( -0.5, 0.9041451884327381 ),
 		vec2( -0.15000000000000002, 0.29792740578363097),
 	]
+	*/
+	let triangle = Util.getMainTriagle(vec2(0, 0), 0.5);
 	SingleTriangle(triangle)
 	SingleTwistedTriangle(triangle, 120)
 	Tesselation(triangle)
