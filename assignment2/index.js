@@ -30,68 +30,68 @@ let GENERAL = {
 }
 
 let CUBE = {
-    color: vec4(1.0, 0.0, 4.0, 1.0),
+    color: vec4(1.0, 0.0, 0.0, 1.0),
     translate: vec3(-0.8, 0, 0),
     translateMatrix: 0,
+    vertices: () => {
+        let _vertices = [];
+        const cords = [
+            vec4(-1, -1,  1, 1),
+            vec4(-1,  1,  1, 1),
+            vec4( 1,  1,  1, 1),
+            vec4( 1, -1,  1, 1),
+            vec4(-1, -1, -1, 1),
+            vec4(-1,  1, -1, 1),
+            vec4( 1,  1, -1, 1),
+            vec4( 1, -1, -1, 1)
+        ];
+        const indices = [
+            // a, b, c, a, c, d
+            1, 0, 3, 1, 3, 2,
+            2, 3, 7, 2, 7, 6,
+            3, 0, 4, 3, 4, 7,
+            6, 5, 1, 6, 1, 2,
+            4, 5, 6, 4, 6, 7,
+            5, 4, 0, 5, 0, 1
+        ];
+
+        for (let i = 0; i < indices.length; ++i) {
+            _vertices.push(cords[indices[i]]);
+        }
+
+        return _vertices;
+    }
 }
 
 let TETRAHEDRON = {
-    color: vec4(2.0, 3.0, 0.0, 1.0),
+    color: vec4(0.0, 1.0, 1.0, 1.0),
     translate: vec3(0.8, 0, 0),
     translateMatrix: 0,
-}
-
-const createCube = () => {
-    let i, cubeVertices = [];
-    const cubeCords = [
-        vec4(-1, -1,  1, 1),
-        vec4(-1,  1,  1, 1),
-        vec4( 1,  1,  1, 1),
-        vec4( 1, -1,  1, 1),
-        vec4(-1, -1, -1, 1),
-        vec4(-1,  1, -1, 1),
-        vec4( 1,  1, -1, 1),
-        vec4( 1, -1, -1, 1)
-    ];
-    const cubeIndices = [
-        //a, b, c, a, c, d
-        1, 0, 3, 1, 3, 2,
-        2, 3, 7, 2, 7, 6,
-        3, 0, 4, 3, 4, 7,
-        6, 5, 1, 6, 1, 2,
-        4, 5, 6, 4, 6, 7,
-        5, 4, 0, 5, 0, 1
-    ];
-
-    for (i = 0; i < cubeIndices.length; ++i) {
-        cubeVertices.push(cubeCords[cubeIndices[i]]);
-    }
-
-    return cubeVertices;
-}
-
-const createTetrahedron = function () {
-    let i, tetrahedronVertices = [];
-    const tetrahedronCords = [
-        vec4(1.0, 1.0, 1.0),//right top front
-        vec4(-1.0, -1.0, 1.0),//left bottom front
-        vec4(-1.0, 1.0, -1.0),//left top back
-        vec4(1.0, -1.0, -1.0)//right bottom back
-    ];
-    const tetrahedronIndices = [
-        0, 1, 2,
-        0, 2, 3,
-        0, 1, 3,
-        1, 2, 3
-    ];
-    for (i = 0; i < tetrahedronIndices.length; i++) {
-        tetrahedronVertices.push(tetrahedronCords[tetrahedronIndices[i]]);
-    }
-    return tetrahedronVertices;
+    vertices: () => {
+        let _vertices = [];
+        const cords = [
+            vec4( 1.0,  1.0,  1.0), //right top front
+            vec4(-1.0, -1.0,  1.0), //left bottom front
+            vec4(-1.0,  1.0, -1.0), //left top back
+            vec4( 1.0, -1.0, -1.0)  //right bottom back
+        ];
+        const indices = [
+            0, 1, 2,
+            0, 2, 3,
+            0, 1, 3,
+            1, 2, 3
+        ];
+        for (let i = 0; i < indices.length; i++) {
+            _vertices.push(cords[indices[i]]);
+        }
+        return _vertices;
+    },
 }
 
 const init = () => {
     let canvas = document.getElementById('gl-canvas');
+
+    canvas.addEventListener("mousedown", detectCubeOrTetrahedron);
 
     gl = WebGLUtils.setupWebGL(canvas, { preserveDrawingBuffer: true });
     if (!gl) alert("Webgl isn't avaliable!");
@@ -103,9 +103,9 @@ const init = () => {
     const program = my.initProgramWithCodes(gl, vertexCode, fragmentCode);
     gl.useProgram(program);
 
-    let cubes = createCube();
-    let tetrahedrons = createTetrahedron();
-    let vertices = cubes.concat(tetrahedrons);
+    let cube_vertices = CUBE.vertices();
+    let tetrahedron_vertices = TETRAHEDRON.vertices();
+    let vertices = cube_vertices.concat(tetrahedron_vertices);
 
     // Initialization
     GENERAL.scaleMatrix = scalem(GENERAL.scale);
@@ -131,7 +131,7 @@ const init = () => {
     VertexUniform.Color = gl.getUniformLocation(program, "aVertexUniformColor");
 
     // Rendering
-    render(VertexUniform, cubes.length, tetrahedrons.length);
+    render(VertexUniform, cube_vertices.length, tetrahedron_vertices.length);
 }
 
 const render = (VertexUniform, cubeLength, tetrahedronLength) => {
@@ -154,9 +154,36 @@ const render = (VertexUniform, cubeLength, tetrahedronLength) => {
     gl.uniform4fv(VertexUniform.Color, TETRAHEDRON.color);
     gl.drawArrays(gl.TRIANGLES, cubeLength, tetrahedronLength);
 
+    // Rotate increase
     GENERAL.rotate[1] ++;
 
+    // Loop
     requestAnimFrame( () => render(VertexUniform, cubeLength, tetrahedronLength));
+}
+
+const isSameColor = (pixels, colors) => {
+    if (pixels[0] === colors[0] * 255 &&
+        pixels[1] === colors[1] * 255 &&
+        pixels[2] === colors[2] * 255) {
+        return true;
+    }
+    return false;
+}
+
+const detectCubeOrTetrahedron = (e) => {
+    let mouseX = e.pageX - gl.canvas.offsetLeft;
+    let mouseY = e.pageY - gl.canvas.offsetTop;
+    let pixels = new Uint8Array(4);
+    gl.readPixels(mouseX, gl.drawingBufferHeight - mouseY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    if (isSameColor(pixels, CUBE.color)) {
+        alert("Cube!!!");
+        return;
+    }
+    if (isSameColor(pixels, TETRAHEDRON.color)) {
+        alert("Tetrahedron!!!");
+        return;
+    }
+    return;
 }
 
 window.onload = init;
