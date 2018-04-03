@@ -129,7 +129,7 @@ const Canvas = (canvasId, vertices, isFill) => {
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-	const program = my.initProgram(gl, 'vertex-shader', 'fragment-shader');
+	const program = my.initProgramWithIds(gl, 'vertex-shader', 'fragment-shader');
 	gl.useProgram(program);
 
 	// Displaying Vertices
