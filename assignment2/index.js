@@ -5,36 +5,53 @@ let vertexCode = `
     uniform mat4 aVertexUniformModel;
     uniform vec4 aVertexUniformColor;
 
-    varying vec4 aVertexColor;
+    varying vec4 vColor;
     void main() {
         gl_PointSize = 1.0; 
         gl_Position = aVertexUniformModel * aVertexPosition;
-        aVertexColor = aVertexUniformColor; 
+        vColor = aVertexUniformColor;
     }
 `;
 
 let fragmentCode = `
     precision mediump float;
 
-    varying vec4 aVertexColor;
+    varying vec4 vColor;
     void main() {
-        gl_FragColor = aVertexColor;
+        gl_FragColor = vColor;
     }
 `;
 
-let GENERAL_SCALE = vec3(0.3, 0.3, 0.3);
-let CUBE_COLOR = vec4(1.0, 0.0, 0.0, 1.0);
+let GENERAL = {
+    scale: vec3(0.1, 0.1, 0.1),
+    rotate: vec3(40, 0, 0),
+    scaleMatrix: 0,
+    rotateMatrix: 0
+}
+
+let CUBE = {
+    color: vec4(1.0, 0.0, 4.0, 1.0),
+    translate: vec3(-0.8, 0, 0),
+    translateMatrix: 0,
+}
+
+let TETRAHEDRON = {
+    color: vec4(2.0, 3.0, 0.0, 1.0),
+    translate: vec3(0.8, 0, 0),
+    translateMatrix: 0,
+}
+
 const createCube = () => {
     let i, cubeVertices = [];
     const cubeCords = [
-        vec4(-1, -1, 1, 1),
-        vec4(-1, 1, 1, 1),
-        vec4(1, 1, 1, 1),
-        vec4(1, -1, 1, 1),
+        vec4(-1, -1,  1, 1),
+        vec4(-1,  1,  1, 1),
+        vec4( 1,  1,  1, 1),
+        vec4( 1, -1,  1, 1),
         vec4(-1, -1, -1, 1),
-        vec4(-1, 1, -1, 1),
-        vec4(1, 1, -1, 1),
-        vec4(1, -1, -1, 1)
+        vec4(-1,  1, -1, 1),
+        vec4( 1,  1, -1, 1),
+        vec4( 1, -1, -1, 1)
     ];
     const cubeIndices = [
         //a, b, c, a, c, d
@@ -53,6 +70,26 @@ const createCube = () => {
     return cubeVertices;
 }
 
+const createTetrahedron = function () {
+    let i, tetrahedronVertices = [];
+    const tetrahedronCords = [
+        vec4(1.0, 1.0, 1.0),//right top front
+        vec4(-1.0, -1.0, 1.0),//left bottom front
+        vec4(-1.0, 1.0, -1.0),//left top back
+        vec4(1.0, -1.0, -1.0)//right bottom back
+    ];
+    const tetrahedronIndices = [
+        0, 1, 2,
+        0, 2, 3,
+        0, 1, 3,
+        1, 2, 3
+    ];
+    for (i = 0; i < tetrahedronIndices.length; i++) {
+        tetrahedronVertices.push(tetrahedronCords[tetrahedronIndices[i]]);
+    }
+    return tetrahedronVertices;
+}
+
 const init = () => {
     let canvas = document.getElementById('gl-canvas');
 
@@ -66,32 +103,60 @@ const init = () => {
     const program = my.initProgramWithCodes(gl, vertexCode, fragmentCode);
     gl.useProgram(program);
 
-    let vertices = createCube();
-    console.log(vertices);
+    let cubes = createCube();
+    let tetrahedrons = createTetrahedron();
+    let vertices = cubes.concat(tetrahedrons);
 
+    // Initialization
+    GENERAL.scaleMatrix = scalem(GENERAL.scale);
+    CUBE.translateMatrix = translate(CUBE.translate);
+    TETRAHEDRON.translateMatrix = translate(TETRAHEDRON.translate);
+
+    // Vertices Buffer
     const bufferId = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW);
 
-    // 
+    // Attrib
     const aVertexPosition = gl.getAttribLocation(program, "aVertexPosition");
     gl.vertexAttribPointer(aVertexPosition, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(aVertexPosition);
 
-    let aVertexUniformModel = gl.getUniformLocation(program, "aVertexUniformModel");
-    let aVertexUniformColor = gl.getUniformLocation(program, 'aVertexUniformColor');
-    render(aVertexUniformModel, aVertexUniformColor, vertices.length);
+    // Uniform
+    let VertexUniform = {
+        Model: 0,
+        Color: 0
+    }
+    VertexUniform.Model = gl.getUniformLocation(program, "aVertexUniformModel");
+    VertexUniform.Color = gl.getUniformLocation(program, "aVertexUniformColor");
+
+    // Rendering
+    render(VertexUniform, cubes.length, tetrahedrons.length);
 }
 
-const render = (uModel, uColor, length) => {
+const render = (VertexUniform, cubeLength, tetrahedronLength) => {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    let model_matrix;
+    // General
+    GENERAL.rotateMatrix = mult(rotate(GENERAL.rotate[0],vec3(1,0,0)),rotate(GENERAL.rotate[1],vec3(0,1,0)))
 
-    let scaleMtr = scalem(GENERAL_SCALE);
-    let modelMtr = scaleMtr;
-    console.log(modelMtr);
-    gl.uniformMatrix4fv(uModel, false, flatten(modelMtr));
-    gl.uniform4fv(uColor, CUBE_COLOR);
-    gl.drawArrays(gl.TRIANGLES, 0, length);
+    // Cube Stuff
+    model_matrix = mult(GENERAL.rotateMatrix, mult(CUBE.translateMatrix, GENERAL.scaleMatrix))
+
+    gl.uniformMatrix4fv(VertexUniform.Model, false, flatten(model_matrix));
+    gl.uniform4fv(VertexUniform.Color, CUBE.color);
+    gl.drawArrays(gl.TRIANGLES, 0, cubeLength);
+
+    // TetraHedron Stuff
+    model_matrix = mult(GENERAL.rotateMatrix, mult(TETRAHEDRON.translateMatrix, GENERAL.scaleMatrix))
+
+    gl.uniformMatrix4fv(VertexUniform.Model, false, flatten(model_matrix));
+    gl.uniform4fv(VertexUniform.Color, TETRAHEDRON.color);
+    gl.drawArrays(gl.TRIANGLES, cubeLength, tetrahedronLength);
+
+    GENERAL.rotate[1] ++;
+
+    requestAnimFrame( () => render(VertexUniform, cubeLength, tetrahedronLength));
 }
 
 window.onload = init;
